@@ -13,7 +13,7 @@ public class DButil {
             e.printStackTrace();
         }
         try {
-            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/tim_talk","root","mty19950603");
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/chatroom","root","mty19950603");
         } catch (SQLException e) {
             e.printStackTrace();
         }

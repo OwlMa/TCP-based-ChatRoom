@@ -7,13 +7,13 @@ public class Message implements Serializable{
     private String Sender;
     private String Getter;
     private String Content;
-    private String Time;
+    private Long Time;
 
     public Message(){
 
     }
 
-    public Message(String sender, String getter, String content, String time) {
+    public Message(String sender, String getter, String content, Long time) {
         Sender = sender;
         Getter = getter;
         Content = content;
@@ -52,11 +52,11 @@ public class Message implements Serializable{
         Content = content;
     }
 
-    public String getTime() {
+    public Long getTime() {
         return Time;
     }
 
-    public void setTime(String time) {
+    public void setTime(Long time) {
         Time = time;
     }
 }

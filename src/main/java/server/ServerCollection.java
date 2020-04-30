@@ -1,44 +1,53 @@
 package server;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 public class ServerCollection {
     private static Map<String, ServerReciveThread> map = new HashMap<String, ServerReciveThread>();
+    private static List<String> userList = new ArrayList<String>();
 
     public static void add(String username, ServerReciveThread serverReciveThread){
         map.put(username, serverReciveThread);
+        userList.add(username);
     }
 
     /**
      * get the serverReceiveThread by using the account name;
-     * @param Name user account
+     * @param username
      * @return return the thread of the communication thread between the user and the server, which is the serverReceiveThread found by its username
      */
-    public static ServerReciveThread get(String Name){
-        return map.get(Name);
+    public static ServerReciveThread get(String username){
+        return map.get(username);
     }
 
     /**
      * delete the serverReceiveThread by its username
      * set the user's status offline
-     * @param Name
+     * @param username
      */
-    public static void remove(String Name){
-        map.remove(Name);
+    public static void remove(String username){
+        map.remove(username);
+        userList.remove(username);
     }
 
     /**
      * traverse the online users
      * @return the string contains all the online user
      */
-    public static String GetOnline(){
-        String Online = "";
-        Iterator<String> it  = map.keySet().iterator();
-        while(it.hasNext()){
-            Online += it.next().toString()+" ";
+    public static List<String> getOnlineList(){
+//        String online = "";
+//        for (Map.Entry<String, ServerReciveThread> entry: map.entrySet()) {
+//            online += entry.getKey() + " ";
+//        }
+//        System.out.println(online);
+        return userList;
+    }
+
+    public static String printUsers() {
+        String users = "";
+        for (String user: userList) {
+            users += user + "/n";
         }
-        return Online;
+        return  users;
     }
 }

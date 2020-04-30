@@ -80,7 +80,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <scrollpane id="229c7">
+                  <scrollpane id="229c7" binding="online_users">
                     <constraints>
                       <grid row="1" column="0" row-span="2" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>

@@ -29,6 +29,7 @@ public class ServerMain {
     private JTabbedPane tabbedPane1;
     private JTextArea textArea2_state;
     private JTextField textFiled_port;
+    private JScrollPane online_users;
     private Socket s;
     private ServerSocket serverSocket;
 
@@ -39,7 +40,9 @@ public class ServerMain {
                     int port = Integer.parseInt(textFiled_port.getText());
                     serverSocket = new ServerSocket(port);
                     String account ="";
-                    Thread t = new Thread(new ServerThread(serverSocket,Lable_usersnum,textArea1_msglist,list_users,Lable_usersnum,account,textArea2_state));
+                    Thread t = new Thread(new ServerThread(serverSocket,Lable_usersnum,
+                            textArea1_msglist,list_users,Lable_usersnum,
+                            account,textArea2_state, online_users));
                     t.start();
                     Button_start.setEnabled(false);
                     textFiled_port.setEnabled(false);
@@ -55,6 +58,7 @@ public class ServerMain {
             public void mouseClicked(MouseEvent e) {
                 ServerThread.closeServer();
                 try {
+                    ServerThread.closeServer();
                     serverSocket.close();
                 } catch (IOException e1) {
                     e1.printStackTrace();
@@ -63,23 +67,23 @@ public class ServerMain {
                 Button_start.setEnabled(true);
             }
         });
-        button_sendmsg.addMouseListener(new MouseAdapter() {
-            public void mouseClicked(MouseEvent e) {
-                Message message = new Message();
-                message.setContent(textField1_msgwrite.getText());
-                message.setSender("System information");
-                message.setType("System");
-                Date date = new Date();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                message.setTime(sdf.format(date));
-                ServerThread.serversendmsg(message);
-                textArea1_msglist.append(message.getContent()+"\n\r");
-                textField1_msgwrite.setText("");
-            }
-        });
+//        button_sendmsg.addMouseListener(new MouseAdapter() {
+//            public void mouseClicked(MouseEvent e) {
+//                Message message = new Message();
+//                message.setContent(textField1_msgwrite.getText());
+//                message.setSender("System information");
+//                message.setType("System");
+//                Date date = new Date();
+//                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//                message.setTime(sdf.format(date));
+//                ServerThread.serverSendMsg(message);
+//                textArea1_msglist.append(message.getContent()+"\n\r");
+//                textField1_msgwrite.setText("");
+//            }
+//        });
         /**
-         * kick off
-         */
+//         * kick off
+//         */
 //        list_users.addMouseListener(new MouseAdapter() {
 //            public void mouseClicked(MouseEvent e) {
 //                if(JOptionPane.showConfirmDialog(null,"Do you want to kick off the user: "+list_users.getSelectedValue())==0){

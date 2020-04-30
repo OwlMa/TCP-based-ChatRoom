@@ -1,13 +1,18 @@
 package model;
 
 public class User {
-    private String account; // primary key
+    private Integer account; // primary key
     private String username;
     private String password;
     private String email;
     private String friends;
     private String groups;
-    private String status;
+    private Integer status;
+
+    public User(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
 
     public String getFriends() {
         return friends;
@@ -25,21 +30,15 @@ public class User {
         this.groups = groups;
     }
 
-    public String getStatus() {
+    public Integer getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(Integer status) {
         this.status = status;
     }
 
-    public User(){
 
-    }
-    public User(String account, String password) {
-        this.account = account;
-        this.password = password;
-    }
 
     public String getEmail() {
         return email;
@@ -64,11 +63,11 @@ public class User {
         this.password = password;
     }
 
-    public String getAccount() {
+    public Integer getAccount() {
         return account;
     }
 
-    public void setAccount(String account) {
+    public void setAccount(Integer account) {
         this.account = account;
     }
 
