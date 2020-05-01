@@ -1,14 +1,9 @@
 package client;
 
 import View.Login;
-import View.Main;
 import dao.Userdao;
-import model.Message;
-import model.User;
 
-import javax.swing.*;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.sql.SQLException;
 
@@ -43,21 +38,8 @@ public class ClientCollection {
             public void run() {
                 String username = "admin01";
                 String password = "admin";
-                Socket socket = null;
                 try {
-                    socket = new Socket("localhost",port);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    Userdao.setStatusOn(username);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                try {
-                    ClientTest.main(username, socket);
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    new Login(username, password);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

@@ -1,6 +1,5 @@
 package client;
 
-import dao.Userdao;
 import model.Message;
 
 import javax.swing.*;
@@ -10,7 +9,6 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Scanner;
 
 public class ClientReceiveThread implements Runnable{
     private Socket socket;
@@ -20,28 +18,29 @@ public class ClientReceiveThread implements Runnable{
     private JList list1;
     private JList list2;
     private static JTextArea textArea;
+    private MessageCollection messageCollection;
 
-    public ClientReceiveThread(Socket socket, String username, JTextArea jtextArea, JList list1, JList list2) throws SQLException {
+    public ClientReceiveThread(Socket socket, String username, JTextArea jtextArea, JList list1, JList list2, List<String> friends, MessageCollection messageCollection) throws SQLException {
         this.socket = socket;
         this.username = username;
         textArea= jtextArea;
         this.list1 = list1;
         this.list2 = list2;
-        friendsList = Userdao.getFriend(username);
-        Integer status = Userdao.getStatus(username);
-        if (status != 1) {
-            close();
-        }
+        friendsList = friends;
+        this.messageCollection = messageCollection;
     }
 
-    public ClientReceiveThread(Socket socket, String username) throws SQLException {
+    /**
+     * this constructor is used for terminal test.
+     * @param socket
+     * @param username
+     * @param friends
+     */
+    public ClientReceiveThread(Socket socket, String username, List<String> friends) {
         this.socket = socket;
         this.username = username;
-        friendsList = Userdao.getFriend(username);
-        Integer status = Userdao.getStatus(username);
-        if (status != 1) {
-            close();
-        }
+        friendsList = friends;
+        messageCollection = new MessageCollection(username);
     }
 
     public void close() {
@@ -50,18 +49,6 @@ public class ClientReceiveThread implements Runnable{
 
     public void run() {
         while (isRun) {
-//            Message message = null;
-//            try {
-//                message = setMessage();
-//                System.out.println("To: " + message.getGetter() + "\n" + message.getContent() + "-----" + message.getTime());
-//            } catch (SQLException e) {
-//                e.printStackTrace();
-//            }
-//            try {
-//                ClientReceiveThread.clientSendMessage(message, socket);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
             try {
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                 Message message = (Message)ois.readObject();
@@ -70,9 +57,36 @@ public class ClientReceiveThread implements Runnable{
                     System.out.println("From: " + message.getSender()
                             + "\n" + content + "-----"
                             + message.getTime());
-                    textArea.setText(message.getContent());
-                    System.out.println("sender: " + message.getSender());
+                    messageCollection.add(message.getSender(), message.getSender() + ": " + content + "\n");
+//                    textArea.append("\n" + message.getSender() + ": " + content + "\n");
+//                    System.out.println("sender: " + message.getSender());
+//                    list1.setSelectedValue(message.getSender(), true);
+//                    if (list1.getSelectedValue().toString().equals(message.getSender())) {
+//                        textArea.append(message.getSender() + ": " + content + "\n");
+//                    }
+//                    else {
+//                        list1.setSelectedValue(message.getSender(), true);
+//                    }
+                    System.out.println("+++++++++++++++++++");
+                    textArea.append(message.getSender() + ": " + content + "\n");
+                    System.out.println("+++++++++++++++++++");
                     list1.setSelectedValue(message.getSender(), true);
+                }
+                else if (message.getType().equals("addFriendResponse")) {
+                    String content = message.getContent();
+                    if (!content.equals("disagree")) {
+                        friendsList.add(content);
+                        DefaultListModel<String> listModel = new DefaultListModel<String>();
+                        for (String friend: friendsList) {
+                            listModel.addElement(friend);
+                        }
+                        list1.setModel(listModel);
+                        JOptionPane.showMessageDialog(null, "This user is your friend!", "Success", JOptionPane.PLAIN_MESSAGE);
+                    }
+                    else {
+                        //system info will inform that this username is invalid or not exist in the Database;
+                        JOptionPane.showMessageDialog(null, "This user may not exist", "Failed", JOptionPane.PLAIN_MESSAGE);
+                    }
                 }
             } catch (IOException e) {
                 e.printStackTrace();

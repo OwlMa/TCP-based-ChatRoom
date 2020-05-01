@@ -34,14 +34,12 @@ public class Userdao {
         ResultSet rs =  ps.executeQuery();
         List<String> friendsList = new ArrayList<String>();
         if (rs.next()){
-            System.out.println("1111111111111");
             String friends[] = rs.getString("friends").split(" ");
             for (String friend: friends) {
                 friendsList.add(friend);
             }
         }
         return friendsList;
-
     }
 
     /**
@@ -55,6 +53,19 @@ public class Userdao {
         ResultSet rs = ps.executeQuery();
         if (rs.next()){
             return rs.getString("groups");
+        }else{
+            return "error";
+        }
+    }
+
+    public static String getPassword(String username) throws SQLException {
+        Connection conn = DButil.getConn();
+        String sql = "SELECT * FROM user WHERE username =?";
+        PreparedStatement ps = conn.prepareStatement(sql);
+        ps.setString(1,username);
+        ResultSet rs = ps.executeQuery();
+        if (rs.next()){
+            return rs.getString("password");
         }else{
             return "error";
         }
@@ -238,4 +249,15 @@ public class Userdao {
         ps.executeUpdate();
     }
 
+    public static void addFriend(String username, List<String> friendsList) throws SQLException {
+        Connection conn = DButil.getConn();
+        String friends = "";
+        for (String str: friendsList) {
+            friends += str + " ";
+        }
+        PreparedStatement ps1 = conn.prepareStatement("UPDATE  user SET friends=? WHERE username=?");
+        ps1.setString(1, friends);
+        ps1.setString(2, username);
+        ps1.execute();
+    }
 }

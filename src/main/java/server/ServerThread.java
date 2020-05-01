@@ -3,6 +3,7 @@ package server;
 import dao.Groupdao;
 import dao.Userdao;
 import model.Message;
+import model.User;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -21,6 +22,8 @@ public class ServerThread implements Runnable{
     private JLabel label;
     private static JTextArea textArea;
     private String username;
+    private String password;
+    private String ServerName;
     private static boolean isStart = true;
     private static JList list_users;
     private static JLabel Label_username;
@@ -29,38 +32,86 @@ public class ServerThread implements Runnable{
 
     public ServerThread(ServerSocket serverSocket,JLabel label,
                         JTextArea jtextArea,JList jList,
-                        JLabel jLabel,String username,
+                        JLabel jLabel,String ServerName,
                         JTextArea textArea2_state, JScrollPane Online_users){
         this.serverSocket = serverSocket;
         this.label = label;
         textArea = jtextArea;
-        this.username = username;
+        this.ServerName = ServerName;
         list_users = jList;
         Label_username = jLabel;
         textArea_state = textArea2_state;
         online_users = Online_users;
     }
 
-    public void receiveLoginInfo(Socket socket) throws IOException, ClassNotFoundException {
+    public Message receiveLoginInfo(Socket socket) throws IOException, ClassNotFoundException {
         ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
         Message message = (Message)ois.readObject();
-        username = message.getContent();
+        String[] content = message.getContent().split(" ");
+        username = content[0];
+        password = content[1];
+        return message;
+    }
+
+    private Message responseLoginInfo(String username) {
+        Message message = new Message();
+        message.setType("loginResponse");
+        message.setTime(System.currentTimeMillis());
+        message.setSender("server");
+        message.setGetter(username);
+        return message;
+    }
+
+    private void sendMsg(Message message, Socket s) throws IOException {
+        ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
+        oos.writeObject(message);
     }
 
     public void run() {
         while (isStart){
             try {
                 Socket s = serverSocket.accept();
-                receiveLoginInfo(s);
-                ServerReciveThread serverReciveThread = new ServerReciveThread(username,s,label,textArea,textArea_state);
-                ServerCollection.add(username,serverReciveThread);
-                Thread t = new Thread(serverReciveThread, username);
-                t.start();
-                textArea_state.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"    User:"
-                +username+"("+ Userdao.getAccountByUserName(username) + ") is on the line！\n\r");
+                Message message = receiveLoginInfo(s);
+                if (message.getType().equals("loginRequest")) {
+                    String databasePassword = Userdao.getPassword(username);
+                    Integer status = Userdao.getStatus(username);
+                    Message returnMessage = responseLoginInfo(username);
+                    if (databasePassword.equals(password) && status == 0) {
+                        //login allowed
+                        Userdao.setStatusOn(username);
+                        String content = "agree";
+
+                        //set friendsList
+                        List<String> friendsList= Userdao.getFriend(username);
+                        String friends = "";
+                        for (String str: friendsList) {
+                            friends += str + "\n";
+                        }
+                        content += " " + friends;
+                        returnMessage.setContent(content);
+
+                        //create the serverReceiveThread for this username
+                        ServerReciveThread serverReciveThread = new ServerReciveThread(username,s,label,textArea,textArea_state);
+                        ServerCollection.add(username,serverReciveThread);
+                        Thread t = new Thread(serverReciveThread, username);
+                        t.start();
+                        textArea_state.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"    User:"
+                                +username+"("+ Userdao.getAccountByUserName(username) + ") is on the line！\n\r");
+                    }
+                    else if (!databasePassword.equals(password)){
+                        //wrong username or password
+                        String content = "disagree" + " " + "1";
+                        returnMessage.setContent(content);
+                    }
+                    else {
+                        //This username is login
+                        String content = "disagree" + " " + "2";
+                        returnMessage.setContent(content);
+                    }
+                    sendMsg(returnMessage, s);
+                }
                 setOnline();
                 System.out.println("====" + ServerCollection.printUsers() + "----");
-//                sendonlines();
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -73,22 +124,23 @@ public class ServerThread implements Runnable{
         }
     }
 
+
+
     public static void closeServer(){
         isStart = false;
     }
 
     /**
-     *Server update the number of the online users itself
+     *Server update the number of the online users
      */
     public static void setOnline() throws SQLException {
-        String[] list = ServerCollection.getOnlineList().toArray(new String[1]);
+        List<String> list = ServerCollection.getOnlineList();
         DefaultListModel<String> listModel = new DefaultListModel<String>();
         for (String s: list) {
             listModel.addElement(s);
         }
-        list_users = new JList<String>(listModel);
-        Label_username.setText("Number of online users:"+list.length);
-        online_users = new JScrollPane(list_users);
+        list_users.setModel(listModel);
+        Label_username.setText("Number of online users:"+list.size());
     }
     /**
      * send messages to group
@@ -144,18 +196,6 @@ public class ServerThread implements Runnable{
             }
             ObjectOutputStream oos = new ObjectOutputStream(serverReciveThread.getSocket().getOutputStream());
             oos.writeObject(message);
-        }
-    }
-    /**
-     * server send private message
-     */
-    public static void sendMsgPersonal(Message message) throws SQLException, IOException {
-        ServerReciveThread serverReciveThread = ServerCollection.get(message.getGetter());
-        try {
-            ObjectOutputStream oos = new ObjectOutputStream(serverReciveThread.getSocket().getOutputStream());
-            oos.writeObject(message);
-        }catch (Exception e){
-            textArea.append(message.getGetter() + "getter is off line now!\n\r");
         }
     }
 }

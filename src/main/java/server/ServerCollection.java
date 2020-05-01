@@ -44,9 +44,9 @@ public class ServerCollection {
     }
 
     public static String printUsers() {
-        String users = "";
+        String users = "\n";
         for (String user: userList) {
-            users += user + "/n";
+            users += user + "\n";
         }
         return  users;
     }

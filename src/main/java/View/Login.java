@@ -1,21 +1,22 @@
 package View;
 
 import client.ClientTest;
-import dao.Userdao;
 import model.Message;
-import model.User;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class Login{
+public class Login {
     private JPanel JPanel1;
     private JButton LoginButton;
     private JTextField textFieldAccount;
@@ -25,30 +26,32 @@ public class Login{
     private static JFrame jFramemod;
     private String username;
     private String password;
-    private Integer account;
     private int port = 2333;
+    private boolean login = true;
+    private Socket socket;
+    private boolean check;
+    private String reason = "";
+    private List<String> friends = new ArrayList<String>();
 
     public Login() {
         LoginButton.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 username = new String(textFieldAccount.getText());
                 password = new String(passwordField.getPassword());
-                User u = new User(username, password);
                 try {
-                    if(Userdao.login(u) && Userdao.getStatus(username)==0){
-//                        account = Userdao.getAccountByUserName(username);
-                        //open up the main window
-                        Socket s = new Socket("localhost",port);
-                        //send the login information to the server
-                        sendLoginInfo(s);
-                        Userdao.setStatusOn(username);
-//                        ClientTest.main(username, s);
-                        Main.RunMain(username, s);
+
+                    //open up the main window
+                    socket = new Socket("localhost",port);
+                    //send the login information to the server
+                    sendLoginInfo(socket);
+                    run();
+//                  ClientTest.main(username, s);
+                    if (check && reason == "" && friends != null) {
+                        Main.RunMain(username, socket, friends);
                         jFramemod.dispose();
-                    }else if (Userdao.getStatus(username)==1){
-                        JOptionPane.showMessageDialog(null, "User is login", "Failed", JOptionPane.PLAIN_MESSAGE);
-                    }else{
-                        JOptionPane.showMessageDialog(null, "Incorrect username or password", "Failed", JOptionPane.PLAIN_MESSAGE);
+                    }
+                    else if (!check && reason != null){
+                        JOptionPane.showMessageDialog(null, reason, "Failed", JOptionPane.PLAIN_MESSAGE);
                     }
                 } catch (SQLException e1) {
                     e1.printStackTrace();
@@ -76,11 +79,65 @@ public class Login{
             }
         });
     }
+    /**
+     * this constructor is used for terminal login.
+     */
+    public Login(String username, String password) throws IOException {
+        this.username = username;
+        this.password = password;
+        socket = new Socket("localhost",port);
+        sendLoginInfo(socket);
+        run();
+        if (check && reason == "" && friends != null) {
+            ClientTest.main(username, socket, friends);
+        }
+    }
 
-    public void sendLoginInfo(Socket s) throws IOException {
+    /**
+     * receiver the login message from the server.
+     */
+    public void run() {
+        while (login) {
+            try {
+                ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
+                Message message = (Message) ois.readObject();
+                if (!message.getType().equals("loginResponse")) {
+                    continue;
+                }
+                String[] content = message.getContent().split(" ");
+                if (content[0].equals("disagree")) {
+                    check = false;
+                    reason += content[1];
+                    login = false;
+                }
+                else if (content[0].equals("agree")) {
+                    check = true;
+                    for (String friend: content[1].split("\n")) {
+                        friends.add(friend);
+                    }
+                    login = false;
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * @param s
+     * send the login information to the server
+     */
+    private void sendLoginInfo(Socket s) throws IOException {
         ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
         Message message = new Message();
-        message.setContent(username);
+        message.setType("loginRequest");
+        message.setSender(username);
+        message.setTime(System.currentTimeMillis());
+        message.setSender("server");
+        String content = username + " " + password;
+        message.setContent(content);
         oos.writeObject(message);
     }
 
