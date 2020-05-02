@@ -1,7 +1,7 @@
 # TCP-Based ChatRoom
 *This is a network course project.*
 
-###Technicals
+### Technicals
 - IDE:Idea
 - GUI: IDEA GuiForm
 - Manage Project: Maven

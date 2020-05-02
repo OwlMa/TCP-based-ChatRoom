@@ -1,11 +1,8 @@
 package client;
 
-import View.Login;
-import dao.Userdao;
+import client.view.Login;
 
 import java.io.IOException;
-import java.net.Socket;
-import java.sql.SQLException;
 
 public class ClientCollection {
     public static void main(String[] args) {

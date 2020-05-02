@@ -1,4 +1,4 @@
-package View;
+package client.view;
 
 import client.ClientTest;
 import model.Message;
@@ -29,6 +29,7 @@ public class Login {
     private String username;
     private String password;
     private int port = 2333;
+    private String ip = "localhost";
     private boolean login = true;
     private Socket socket;
     private boolean check;
@@ -44,7 +45,7 @@ public class Login {
                 try {
                     //open up the main window
 
-                    socket = new Socket("localhost",port);
+                    socket = new Socket(ip,port);
 
                     //send the login information to the server
                     sendLoginInfo(socket);
@@ -69,7 +70,8 @@ public class Login {
             @Override
             public void mouseClicked(MouseEvent e) {
                 try {
-                    port = Integer.parseInt(JOptionPane.showInputDialog(null,"Please input the port(Default 3306)：\n","2333"));
+                    port = Integer.parseInt(JOptionPane.showInputDialog(null,"Please input the port(Default 2333)：\n","2333"));
+                    ip = JOptionPane.showInputDialog(null,"Please input the ip(Default localhost)：\n","localhost");
                 }catch (Exception e1){
 
                 }

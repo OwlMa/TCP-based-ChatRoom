@@ -25,7 +25,7 @@ public class ServerThread implements Runnable{
     private static JList list_users;
     private static JLabel Label_username;
     private static JTextArea textArea_state;
-    private static JScrollPane online_users;
+
 
     public ServerThread(ServerSocket serverSocket,JLabel label,
                         JTextArea jtextArea,JList jList,
@@ -38,7 +38,6 @@ public class ServerThread implements Runnable{
         list_users = jList;
         Label_username = jLabel;
         textArea_state = textArea2_state;
-        online_users = Online_users;
     }
 
     public Message receiveLoginInfo(Socket socket) throws IOException, ClassNotFoundException {

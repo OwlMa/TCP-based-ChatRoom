@@ -1,4 +1,4 @@
-package View;
+package client.view;
 
 
 import client.AddFriend;
@@ -16,8 +16,6 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
 public class Main {

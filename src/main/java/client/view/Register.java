@@ -1,8 +1,6 @@
-package View;
+package client.view;
 
-import com.mysql.cj.x.protobuf.MysqlxDatatypes;
 import dao.Userdao;
-import model.User;
 
 import javax.swing.*;
 import java.awt.*;
