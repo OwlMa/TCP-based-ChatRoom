@@ -14,7 +14,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Login {
     private JPanel JPanel1;
@@ -32,6 +34,7 @@ public class Login {
     private boolean check;
     private String reason = "";
     private List<String> friends = new ArrayList<String>();
+    private List<String> groups = new ArrayList<String>();
 
     public Login() {
         LoginButton.addMouseListener(new MouseAdapter() {
@@ -39,15 +42,15 @@ public class Login {
                 username = new String(textFieldAccount.getText());
                 password = new String(passwordField.getPassword());
                 try {
-
                     //open up the main window
+
                     socket = new Socket("localhost",port);
+
                     //send the login information to the server
                     sendLoginInfo(socket);
                     run();
-//                  ClientTest.main(username, s);
                     if (check && reason == "" && friends != null) {
-                        Main.RunMain(username, socket, friends);
+                        Main.RunMain(username, socket, friends, groups);
                         jFramemod.dispose();
                     }
                     else if (!check && reason != null){
@@ -89,7 +92,7 @@ public class Login {
         sendLoginInfo(socket);
         run();
         if (check && reason == "" && friends != null) {
-            ClientTest.main(username, socket, friends);
+            ClientTest.main(username, socket, friends, groups);
         }
     }
 
@@ -97,6 +100,9 @@ public class Login {
      * receiver the login message from the server.
      */
     public void run() {
+        Map<String, String> errorMap = new HashMap<String, String>();
+        errorMap.put("1", "wrong username or password");
+        errorMap.put("2", "this user is login");
         while (login) {
             try {
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
@@ -107,13 +113,16 @@ public class Login {
                 String[] content = message.getContent().split(" ");
                 if (content[0].equals("disagree")) {
                     check = false;
-                    reason += content[1];
+                    reason += errorMap.get(content[1]);
                     login = false;
                 }
                 else if (content[0].equals("agree")) {
                     check = true;
                     for (String friend: content[1].split("\n")) {
                         friends.add(friend);
+                    }
+                    for (String group: content[2].split("\n")) {
+                        groups.add(group);
                     }
                     login = false;
                 }

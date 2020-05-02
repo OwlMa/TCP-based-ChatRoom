@@ -3,6 +3,7 @@ package View;
 
 import client.AddFriend;
 import client.ClientReceiveThread;
+import client.GroupMessageCollection;
 import client.MessageCollection;
 import model.Message;
 
@@ -39,63 +40,61 @@ public class Main {
     private static String username;
     private static Socket s;
     private static List<String> friendsList;
+    private static List<String> groupsList;
     private static MessageCollection messageCollection;
+    private static GroupMessageCollection groupMessageCollection;
 
     public Main() throws SQLException {
-//        JPanel_chatwindow.setVisible(false);
-//        Icon icon1 = new ImageIcon("D:\\Java\\TIM_Talk\\img\\g2.jpg");
-//        Icon icon2 = new ImageIcon("D:\\Java\\TIM_Talk\\img\\g2.jpg");
-//        Icon icon3 = new ImageIcon("D:\\Java\\TIM_Talk\\img\\g2.jpg");
-//        Icon[] icons = { icon1, icon2, icon3};
-//        list1.setCellRenderer(new MyCellRenderer(icons));
 
-//        ImageIcon imageIcon = new ImageIcon("D:\\Java\\TIM_Talk\\img\\g2.jpg");
-//        Lable_icon.setIcon(imageIcon);
-//        List<String> friendsList = Userdao.getFriend(username);
-//        Lable_username.setText(username);
+        //load the friends list into list1
         DefaultListModel<String> listModel = new DefaultListModel<String>();
         for (String friend: friendsList) {
             listModel.addElement(friend);
         }
         list1.setModel(listModel);
         messageCollection = new MessageCollection(username);
-        Thread t = new Thread(new ClientReceiveThread(s, username, textArea_msglist, list1, list2, friendsList, messageCollection));
+        //load the groups list into the list2
+        DefaultListModel<String> listModelGroup = new DefaultListModel<String>();
+        for (String group: groupsList) {
+            listModelGroup.addElement(group);
+        }
+        list2.setModel(listModelGroup);
+
+        groupMessageCollection = new GroupMessageCollection(username);
+        Thread t = new Thread(new ClientReceiveThread(s, username, textArea_msglist, list1, list2, friendsList, messageCollection, groupMessageCollection));
         t.start();
 
         button_send.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 Message message = new Message();
                 message.setContent(textField_msgsend.getText());
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 message.setTime(System.currentTimeMillis());
                 try {
-//                    if (list1.getSelectedValue() == null && list2.getSelectedValue() != null) {
-//                        message.setType("group");
-//                        message.setGetter(list2.getSelectedValue().toString());
-//
-//                        String content = ChatContentcollection2.getContent(Groupdao.getgroupnumber(list2.getSelectedValue().toString()));
-//                        content += "\t\t\t\tMe:" + message.getContent() + "\n\r";
-//                        ChatContentcollection2.addContent(Groupdao.getgroupnumber(list2.getSelectedValue().toString()), content);
-                    if (list1.getSelectedValue() != null && list2.getSelectedValue() == null) {
+                    if (list1.getSelectedValue() == null && list2.getSelectedValue() != null) {
+                        message.setType("group");
+                        message.setGetter(list2.getSelectedValue().toString());
+                        groupMessageCollection.add(list2.getSelectedValue().toString(),"\t\t\t\tMe:" + message.getContent() + "\n\r");
+                    }
+                    else if (list1.getSelectedValue() != null && list2.getSelectedValue() == null) {
                         message.setType("personal");
                         message.setGetter(list1.getSelectedValue().toString());
                         messageCollection.add(list1.getSelectedValue().toString(), "\t\t\t\tMe:" + message.getContent() + "\n\r");
 //                        String content = ChatContentcollection.getContent(Userdao.getaccountbyusername(list1.getSelectedValue().toString()));
 //                        content += "\t\t\t\tMe:" + message.getContent() + "\n\r";
-//                        ChatContentcollection.addContent(Userdao.getaccountbyusername(list1.getSelectedValue().toString()), content);
                     } else {
-                        textArea_msglist.append("选择用户列表错误！\n\r");
+                        textArea_msglist.append("please select a user or group！\n\r");
                         return;
                     }
                     message.setSender(username);
                 } catch (Exception e1) {
-                    textArea_msglist.append("请选择发送对象\n\r");
+                    textArea_msglist.append("please select a user to send message\n\r");
                     return;
                 }
                 try {
                     ClientReceiveThread.clientSendMessage(message, s);
                 } catch (IOException e1) {
-                    textArea_msglist.append("与服务器连接断开，请重新尝试连接服务器！\n\r");
+                    textArea_msglist.append("please connect to the server\n\r");
                     return;
                 }
                 textArea_msglist.append("\t\t\t\tMe:" + message.getContent() + "\n\r");
@@ -120,6 +119,7 @@ public class Main {
                 }
             }
         });
+
         list1.addListSelectionListener(new ListSelectionListener() {
             @Override
             public void valueChanged(ListSelectionEvent e) {
@@ -137,32 +137,25 @@ public class Main {
             }
         });
 
-//        list2.addListSelectionListener(new ListSelectionListener() {
-//            @Override
-//            public void valueChanged(ListSelectionEvent e) {
-//                if (!e.getValueIsAdjusting()){
-//                    if (list2.getSelectedValue()==null) {
-//                        return;
-//                    }
-//                    Lable_name.setText(list2.getSelectedValue().toString());
-//                    if (!list1.isSelectionEmpty()) {
-//                        list1.clearSelection();
-//                    }
-//                    try {
-//                        String content = ChatContentcollection2.getContent(Groupdao.getgroupnumber(list2.getSelectedValue().toString()));
-//                        if (content==null){
-//                            content = "";
-//                        }
-//                        textArea_msglist.setText(content);
-//                    } catch (SQLException e1) {
-//                        e1.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
+        list2.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                if (!e.getValueIsAdjusting()){
+                    if (list2.getSelectedValue()==null) {
+                        return;
+                    }
+                    Lable_name.setText(list2.getSelectedValue().toString());
+                    if (!list1.isSelectionEmpty()) {
+                        list1.clearSelection();
+                    }
+                    String content = groupMessageCollection.showContent(list2.getSelectedValue().toString());
+                    textArea_msglist.setText(content);
+                }
+            }
+        });
     }
 
-    public static void RunMain(String userName, Socket socket, List<String> list) throws SQLException {
+    public static void RunMain(String userName, Socket socket, List<String> list, List<String> groups) throws SQLException {
         try {
             UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
         } catch (ClassNotFoundException e) {
@@ -177,6 +170,7 @@ public class Main {
         JFrame frame = new JFrame("Chat Room    "+ userName);
         username = userName;
         friendsList = list;
+        groupsList = groups;
         s = socket;
         frame.setContentPane(new Main().JPanel1);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

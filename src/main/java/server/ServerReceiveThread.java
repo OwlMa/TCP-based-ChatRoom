@@ -2,7 +2,6 @@ package server;
 
 import dao.Userdao;
 import model.Message;
-import model.User;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -10,11 +9,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 
-public class ServerReciveThread implements Runnable{
+public class ServerReceiveThread implements Runnable{
     private Socket s;
     private JTextArea textArea;
     private JLabel label;
@@ -22,7 +19,7 @@ public class ServerReciveThread implements Runnable{
     private JTextArea textArea_state;
     private static boolean isRun = true;
 
-    public ServerReciveThread(String username,Socket socket,JLabel label,JTextArea textArea,JTextArea textArea2_state){
+    public ServerReceiveThread(String username, Socket socket, JLabel label, JTextArea textArea, JTextArea textArea2_state){
         this.username = username;
         this.label = label;
         this.textArea = textArea;
@@ -43,15 +40,23 @@ public class ServerReciveThread implements Runnable{
                 System.out.println(message.getContent());
                 System.out.println("done");
                 /**
-                 * forward the message by its type(personal or addFriend)
+                 * forward the message by its type(group, personal or addFriend)
                  */
                 if (message.getType().equals("group")){
-                    ServerThread.sendmsgtoall(message);
+                    List<String> userList =  ServerCollection.getOnlineList();
+                    for (String user: userList) {
+                        if (user.equals(username)) {
+                            continue;
+                        }
+                        ServerReceiveThread getterReceiveThread = ServerCollection.get(user);
+                        getterReceiveThread.sendMsgPersonal(message);
+                    }
                 }
                 else if (message.getType().equals("personal")){
-                    System.out.println(message.getContent());
-                    ServerReciveThread getterReceiveThread = ServerCollection.get(message.getGetter());
-                    getterReceiveThread.sendMsgPersonal(message);
+                    if (ServerCollection.contains(message.getGetter())) {
+                        ServerReceiveThread getterReceiveThread = ServerCollection.get(message.getGetter());
+                        getterReceiveThread.sendMsgPersonal(message);
+                    }
                 }
                 else if (message.getType().equals("addFriendRequest")) {
                     String friendName = message.getContent();
@@ -79,7 +84,7 @@ public class ServerReciveThread implements Runnable{
 
                         //inform the friend as well
                         returnMessage.setGetter(friendName);
-                        ServerReciveThread friendServerThread = ServerCollection.get(friendName);
+                        ServerReceiveThread friendServerThread = ServerCollection.get(friendName);
                         if (friendServerThread == null) {
                             textArea.append(friendName + " is not on the line right now!");
                             ServerCollection.remove(friendName);

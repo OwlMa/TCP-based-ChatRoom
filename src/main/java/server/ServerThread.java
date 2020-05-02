@@ -1,9 +1,7 @@
 package server;
 
-import dao.Groupdao;
 import dao.Userdao;
 import model.Message;
-import model.User;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -13,7 +11,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -23,7 +20,7 @@ public class ServerThread implements Runnable{
     private static JTextArea textArea;
     private String username;
     private String password;
-    private String ServerName;
+    private String serverName;
     private static boolean isStart = true;
     private static JList list_users;
     private static JLabel Label_username;
@@ -37,7 +34,7 @@ public class ServerThread implements Runnable{
         this.serverSocket = serverSocket;
         this.label = label;
         textArea = jtextArea;
-        this.ServerName = ServerName;
+        this.serverName = ServerName;
         list_users = jList;
         Label_username = jLabel;
         textArea_state = textArea2_state;
@@ -53,11 +50,11 @@ public class ServerThread implements Runnable{
         return message;
     }
 
-    private Message responseLoginInfo(String username) {
+    private Message responseMsg(String username, String type) {
         Message message = new Message();
-        message.setType("loginResponse");
+        message.setType(type);
         message.setTime(System.currentTimeMillis());
-        message.setSender("server");
+        message.setSender(serverName);
         message.setGetter(username);
         return message;
     }
@@ -67,6 +64,7 @@ public class ServerThread implements Runnable{
         oos.writeObject(message);
     }
 
+    @Override
     public void run() {
         while (isStart){
             try {
@@ -75,25 +73,31 @@ public class ServerThread implements Runnable{
                 if (message.getType().equals("loginRequest")) {
                     String databasePassword = Userdao.getPassword(username);
                     Integer status = Userdao.getStatus(username);
-                    Message returnMessage = responseLoginInfo(username);
+                    Message returnMessage = responseMsg(username, "loginResponse");
                     if (databasePassword.equals(password) && status == 0) {
                         //login allowed
                         Userdao.setStatusOn(username);
                         String content = "agree";
 
                         //set friendsList
-                        List<String> friendsList= Userdao.getFriend(username);
+                        List<String> friendsList = Userdao.getFriend(username);
                         String friends = "";
                         for (String str: friendsList) {
                             friends += str + "\n";
                         }
                         content += " " + friends;
+                        List<String> groupsList = Userdao.getGroup(username);
+                        String groups = "";
+                        for (String groupName: groupsList) {
+                            groups += groupName + "\n";
+                        }
+                        content += " " + groups;
                         returnMessage.setContent(content);
 
                         //create the serverReceiveThread for this username
-                        ServerReciveThread serverReciveThread = new ServerReciveThread(username,s,label,textArea,textArea_state);
-                        ServerCollection.add(username,serverReciveThread);
-                        Thread t = new Thread(serverReciveThread, username);
+                        ServerReceiveThread serverReceiveThread = new ServerReceiveThread(username,s,label,textArea,textArea_state);
+                        ServerCollection.add(username, serverReceiveThread);
+                        Thread t = new Thread(serverReceiveThread, username);
                         t.start();
                         textArea_state.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"    User:"
                                 +username+"("+ Userdao.getAccountByUserName(username) + ") is on the line！\n\r");
@@ -125,7 +129,6 @@ public class ServerThread implements Runnable{
     }
 
 
-
     public static void closeServer(){
         isStart = false;
     }
@@ -142,60 +145,16 @@ public class ServerThread implements Runnable{
         list_users.setModel(listModel);
         Label_username.setText("Number of online users:"+list.size());
     }
-    /**
-     * send messages to group
-     */
-//    public static void serverSendMsg(Message message){
-//        try {
-//            String[] onlines = ServerCollection.getOnline().split(" ");
-//            for (String online:onlines) {
-//                ObjectOutputStream oos = new ObjectOutputStream(ServerCollection.get(online).getSocket().getOutputStream());
-//                oos.writeObject(message);
-//            }
-//        } catch (IOException e1) {
-//            e1.printStackTrace();
-//        }
-//    }
+
 
     /**
-     * send update messages to client to update the number of online users
+     *sender send the message to the "world" group
      */
-//    public static void sendOnlines() throws IOException {
-//        Message message = new Message();
-//        message.setContent(ServerCollection.getOnline());
-//        message.setType("setOnline");
-//        String[] strings = ServerCollection.getOnline().split(" ");
-//        for (String str:strings) {
-//            ServerReciveThread serverReciveThread = ServerCollection.get(str);
-//            ObjectOutputStream oos = new ObjectOutputStream(serverReciveThread.getSocket().getOutputStream());
-//            oos.writeObject(message);
-//        }
-//    }
-
-    /**
-     *sender send the message to the group but not include the sender
-     */
-    public static void sendmsgtoall(Message message) throws IOException, SQLException {
-//        String[] onlines = ServerCollection.GetOnline().split(" ");
-//        for (String online:onlines) {
-//            if (online.equals(message.getSender())){
-//                continue;
-//            }
-//            ServerReciveThread serverReciveThread = ServerCollection.get(online);
-//            ObjectOutputStream oos = new ObjectOutputStream(serverReciveThread.getSocket().getOutputStream());
-//            oos.writeObject(message);
-//        }
-        String[] users = Groupdao.getMembers(Groupdao.getgroupnumber(message.getGetter())).split(" ");
-        for (String user:users) {
-            if (user.equals(message.getSender())){
-                continue;
-            }
-            ServerReciveThread serverReciveThread = ServerCollection.get(user);
-            if (serverReciveThread==null){
-                continue;
-            }
-            ObjectOutputStream oos = new ObjectOutputStream(serverReciveThread.getSocket().getOutputStream());
-            oos.writeObject(message);
+    public static void sendMsgToAll(Message message) throws IOException, SQLException {
+        List<String> userList = ServerCollection.getOnlineList();
+        for (String user: userList) {
+            ServerReceiveThread serverReceiveThread = ServerCollection.get(user);
+            serverReceiveThread.sendMsgPersonal(message);
         }
     }
 }

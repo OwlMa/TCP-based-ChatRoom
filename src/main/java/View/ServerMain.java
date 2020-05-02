@@ -1,8 +1,6 @@
 package View;
 
-import dao.Userdao;
 import model.Message;
-import server.ServerCollection;
 import server.ServerThread;
 
 import javax.swing.*;
@@ -30,19 +28,22 @@ public class ServerMain {
     private JTextArea textArea2_state;
     private JTextField textFiled_port;
     private JScrollPane online_users;
-    private Socket s;
     private ServerSocket serverSocket;
 
     public ServerMain() {
+
+        /**
+         * start the server
+         */
         Button_start.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 try {
                     int port = Integer.parseInt(textFiled_port.getText());
                     serverSocket = new ServerSocket(port);
-                    String account ="";
+                    String serverName = "server";
                     Thread t = new Thread(new ServerThread(serverSocket,Lable_usersnum,
                             textArea1_msglist,list_users,Lable_usersnum,
-                            account,textArea2_state, online_users));
+                            serverName,textArea2_state, online_users));
                     t.start();
                     Button_start.setEnabled(false);
                     textFiled_port.setEnabled(false);
@@ -54,6 +55,10 @@ public class ServerMain {
 
             }
         });
+
+        /**
+         * stop the server
+         */
         Button_stop.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 ServerThread.closeServer();
@@ -67,42 +72,33 @@ public class ServerMain {
                 Button_start.setEnabled(true);
             }
         });
-//        button_sendmsg.addMouseListener(new MouseAdapter() {
-//            public void mouseClicked(MouseEvent e) {
-//                Message message = new Message();
-//                message.setContent(textField1_msgwrite.getText());
-//                message.setSender("System information");
-//                message.setType("System");
+
+        /**
+         * send the message to the group "world"
+         */
+        button_sendmsg.addMouseListener(new MouseAdapter() {
+            public void mouseClicked(MouseEvent e) {
+                Message message = new Message();
+                message.setContent(textField1_msgwrite.getText());
+                message.setTime(System.currentTimeMillis());
+                message.setSender("server");
+                message.setGetter("world");
+                message.setType("group");
 //                Date date = new Date();
 //                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 //                message.setTime(sdf.format(date));
-//                ServerThread.serverSendMsg(message);
-//                textArea1_msglist.append(message.getContent()+"\n\r");
-//                textField1_msgwrite.setText("");
-//            }
-//        });
-        /**
-//         * kick off
-//         */
-//        list_users.addMouseListener(new MouseAdapter() {
-//            public void mouseClicked(MouseEvent e) {
-//                if(JOptionPane.showConfirmDialog(null,"Do you want to kick off the user: "+list_users.getSelectedValue())==0){
-//                    try {
-//                        String account = Userdao.getaccountbyusername(list_users.getSelectedValue().toString());
-//                        ServerCollection.get(account).closeThread();
-//                        ServerCollection.remove(account);
-//                        Userdao.putlogin(account);
-//                        textArea2_state.append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())+"   "+list_users.getSelectedValue().toString()+"Has been kicked off by the server\n\r");
-//                        ServerThread.setonlines(ServerCollection.GetOnline());
-//                        //TODO
-//                    } catch (SQLException e1) {
-//                        e1.printStackTrace();
-//                    } catch (IOException e1) {
-//                        e1.printStackTrace();
-//                    }
-//                }
-//            }
-//        });
+
+                try {
+                    ServerThread.sendMsgToAll(message);
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+                textArea1_msglist.append(message.getSender()+": to :"+message.getGetter()+": "+message.getContent()+"\n\r");
+                textField1_msgwrite.setText("");
+            }
+        });
     }
 
     public static void main(String[] args) throws ClassNotFoundException, UnsupportedLookAndFeelException, InstantiationException, IllegalAccessException {

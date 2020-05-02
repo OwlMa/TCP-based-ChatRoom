@@ -19,8 +19,9 @@ public class ClientReceiveThread implements Runnable{
     private JList list2;
     private static JTextArea textArea;
     private MessageCollection messageCollection;
+    private GroupMessageCollection groupMessageCollection;
 
-    public ClientReceiveThread(Socket socket, String username, JTextArea jtextArea, JList list1, JList list2, List<String> friends, MessageCollection messageCollection) throws SQLException {
+    public ClientReceiveThread(Socket socket, String username, JTextArea jtextArea, JList list1, JList list2, List<String> friends, MessageCollection messageCollection, GroupMessageCollection groupMessageCollection) throws SQLException {
         this.socket = socket;
         this.username = username;
         textArea= jtextArea;
@@ -28,6 +29,7 @@ public class ClientReceiveThread implements Runnable{
         this.list2 = list2;
         friendsList = friends;
         this.messageCollection = messageCollection;
+        this.groupMessageCollection = groupMessageCollection;
     }
 
     /**
@@ -41,32 +43,34 @@ public class ClientReceiveThread implements Runnable{
         this.username = username;
         friendsList = friends;
         messageCollection = new MessageCollection(username);
+        groupMessageCollection = new GroupMessageCollection(username);
     }
 
     public void close() {
         this.isRun = false;
     }
 
+    @Override
     public void run() {
         while (isRun) {
             try {
                 ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
                 Message message = (Message)ois.readObject();
-                if (message.getType().equals("personal")) {
+                if (message.getType().equals("group")) {
+                    String content = message.getContent();
+                    System.out.println("From: " + message.getSender() + " in group"
+                            + "\n" + content + "-----"
+                            + message.getTime());
+                    groupMessageCollection.add(message.getGetter(), message.getSender() + ": " + content + "\n");
+                    list2.setSelectedValue(message.getGetter(), true);
+                    textArea.append(message.getSender() + ": " + content + "\n");
+                }
+                else if (message.getType().equals("personal")) {
                     String content = message.getContent();
                     System.out.println("From: " + message.getSender()
                             + "\n" + content + "-----"
                             + message.getTime());
                     messageCollection.add(message.getSender(), message.getSender() + ": " + content + "\n");
-//                    textArea.append("\n" + message.getSender() + ": " + content + "\n");
-//                    System.out.println("sender: " + message.getSender());
-//                    list1.setSelectedValue(message.getSender(), true);
-//                    if (list1.getSelectedValue().toString().equals(message.getSender())) {
-//                        textArea.append(message.getSender() + ": " + content + "\n");
-//                    }
-//                    else {
-//                        list1.setSelectedValue(message.getSender(), true);
-//                    }
                     System.out.println("+++++++++++++++++++");
                     textArea.append(message.getSender() + ": " + content + "\n");
                     System.out.println("+++++++++++++++++++");

@@ -10,29 +10,6 @@ import java.sql.SQLException;
 public class ClientCollection {
     public static void main(String[] args) {
         final int port = 2333;
-//        Thread t1 = new Thread() {
-//            @Override
-//            public void run() {
-//                String username = "admin";
-//                String password = "123456";
-//                Socket socket = null;
-//                try {
-//                    socket = new Socket("localhost",port);
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//                try {
-//                    Userdao.setStatusOn(username);
-//                } catch (SQLException e) {
-//                    e.printStackTrace();
-//                }
-//                try {
-//                    Main.RunMain(username, socket);
-//                } catch (SQLException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        };
         Thread t2 = new Thread() {
             @Override
             public void run() {
